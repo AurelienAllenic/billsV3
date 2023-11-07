@@ -46,6 +46,53 @@ describe("Given that I am a user on login page", () => {
       fireEvent.submit(form);
       expect(screen.getByTestId("form-employee")).toBeTruthy();
     });
+
+    describe("When I do fill fields in correct format and I click on employee button Login In but login fails", () => {
+      test("Then createUser should be called", async () => {
+        document.body.innerHTML = LoginUI();
+        const inputData = {
+          email: "johndoe@email.com",
+          password: "azerty",
+        };
+  
+        const inputEmailUser = screen.getByTestId("employee-email-input");
+        fireEvent.change(inputEmailUser, { target: { value: inputData.email } });
+  
+        const inputPasswordUser = screen.getByTestId("employee-password-input");
+        fireEvent.change(inputPasswordUser, {
+          target: { value: inputData.password },
+        });
+  
+        const form = screen.getByTestId("form-employee");
+  
+        const onNavigate = jest.fn();
+        let PREVIOUS_LOCATION = "";
+  
+        const store = jest.fn();
+  
+        const login = new Login({
+          document,
+          localStorage: window.localStorage,
+          onNavigate,
+          PREVIOUS_LOCATION,
+          store,
+        });
+  
+        login.login = jest.fn().mockRejectedValue(new Error("Login failed"));
+        login.createUser = jest.fn();
+  
+        const handleSubmit = jest.fn(login.handleSubmitEmployee);
+        form.addEventListener("submit", handleSubmit);
+        fireEvent.submit(form);
+  
+        // Attendre que toutes les promesses en attente soient résolues
+        await new Promise(process.nextTick);
+  
+        expect(handleSubmit).toHaveBeenCalled();
+        expect(login.login).toHaveBeenCalled();
+        expect(login.createUser).toHaveBeenCalled();
+      });
+    });
   });
 
   describe("When I do fill fields in correct format and I click on employee button Login In", () => {
@@ -225,6 +272,49 @@ describe("Given that I am a user on login page", () => {
 
     test("It should renders HR dashboard page", () => {
       expect(screen.queryByText("Validations")).toBeTruthy();
+    });
+  });
+});
+describe("Given that I am an admin user on the login page", () => {
+  describe("When I fill in the fields correctly and click on the admin login button but the login fails", () => {
+    test("Then createUser should be called", async () => {
+      // Setup du DOM avec le formulaire de connexion
+      document.body.innerHTML = LoginUI();
+
+      // Remplissage des champs du formulaire
+      const inputData = {
+        email: "admin@email.com",
+        password: "password123",
+      };
+      fireEvent.input(screen.getByTestId("admin-email-input"), {
+        target: { value: inputData.email },
+      });
+      fireEvent.input(screen.getByTestId("admin-password-input"), {
+        target: { value: inputData.password },
+      });
+
+      // Mock des fonctions et objets nécessaires
+      const onNavigate = jest.fn();
+      const login = new Login({
+        document,
+        localStorage: window.localStorage,
+        onNavigate,
+        PREVIOUS_LOCATION: "",
+        store: jest.fn(),
+      });
+      login.login = jest.fn().mockRejectedValue(new Error("Login failed"));
+      login.createUser = jest.fn();
+
+      // Déclenchement de la soumission du formulaire et attente du résultat
+      const form = screen.getByTestId("form-admin");
+      form.addEventListener("submit", login.handleSubmitAdmin);
+      fireEvent.submit(form);
+
+      // Attente que toutes les promesses en attente soient résolues
+      await new Promise(process.nextTick);
+
+      // Vérification que createUser a été appelé
+      expect(login.createUser).toHaveBeenCalled();
     });
   });
 });

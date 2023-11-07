@@ -22,37 +22,37 @@ export const modal = () => (`
   `)
 
 export default (bill) => {
-
+/* Here I just wanted attributes to fit with the id of textarea or input , to fix the validation of bills in admin section*/
   return (`
     <div class="container dashboard-form" data-testid="dashboard-form">
       <div class="row">
         <div class="col-sm" id="dashboard-form-col1">
           <label for="expense-type" class="bold-label">Type de dépense</label>
-          <div class='input-field'> ${bill.type} </div>
+          <div class='input-field' id="expense-type"> ${bill.type} </div>
           <label for="expense-name" class="bold-label">Nom de la dépense</label>
-          <div class='input-field'> ${bill.name} </div>
+          <div class='input-field' id="expense-name"> ${bill.name} </div>
           <label for="datepicker" class="bold-label">Date</label>
-          <div class='input-field input-flex'>
+          <div class='input-field input-flex' id="datepicker">
             <span>${formatDate(bill.date)}</span>
             <span> ${calendarIcon} </span>
           </div>
         </div>
         <div class="col-sm" id="dashboard-form-col2">
           <label for="commentary" class="bold-label">Commentaire</label>
-          <div class='textarea-field' style="height: 300px;"> ${bill.commentary} </div>
+          <div class='textarea-field' style="height: 300px;" id="commentary"> ${bill.commentary} </div>
         </div>
       </div>
       <div class="row">
         <div class="col-sm">
           <label for="amount" class="bold-label">Montant TTC </label>
-          <div class='input-field input-flex'>
-            <span data-testid="amount-d">${bill.amount}</span>
+          <div class='input-field input-flex' id="amount">
+            <span data-testid="amount">${bill.amount}</span>
             <span> ${euroIcon} </span>
           </div>
         </div>
         <div class="col-sm">
           <label for="vat" class="bold-label">TVA</label>
-          <div id='vat-flex-container'>
+          <div id='vat-flex-container' id="vat">
             <div class='input-field input-flex vat-flex'>
               <span>${bill.vat}</span>
               <span> ${euroIcon} </span>
@@ -67,7 +67,7 @@ export default (bill) => {
       <div class="row">
         <div class="col-sm">
           <label for="file" class="bold-label">Justificatif</label>
-            <div class='input-field input-flex file-flex'>
+            <div class='input-field input-flex file-flex' id="file">
             <span id="file-name-admin">${bill.fileName}</span>
             <div class='icons-container'>
               <span id="icon-eye-d" data-testid="icon-eye-d" data-bill-url="${bill.fileUrl}"> ${eyeWhite} </span>
@@ -78,13 +78,13 @@ export default (bill) => {
       <div class="row">
        ${bill.status === 'pending' ? (`
         <div class="col-sm">
-          <label for="commentary-admin" class="bold-label">Ajouter un commentaire</label>
-          <textarea id="commentary2" class="form-control blue-border" data-testid="commentary2" rows="5"></textarea>
+          <label for="commentary" class="bold-label">Ajouter un commentaire</label>
+          <textarea id="commentary" class="form-control blue-border" data-testid="commentary" rows="5"></textarea>
         </div>
        `) : (`
         <div class="col-sm">
           <label for="commentary-admin" class="bold-label">Votre commentaire</label>
-          <div class='input-field'> ${bill.commentAdmin} </div>
+          <div class='input-field' id="commentary-admin"> ${bill.commentAdmin} </div>
         </div>
        `)}
       </div>
