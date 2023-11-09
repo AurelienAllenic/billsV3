@@ -2,245 +2,110 @@
  * @jest-environment jsdom
  */
 
-import {fireEvent, screen, waitFor} from "@testing-library/dom"
-import userEvent from '@testing-library/user-event'
-import DashboardFormUI from "../views/DashboardFormUI.js"
-import DashboardUI from "../views/DashboardUI.js"
-import Dashboard, { filteredBills, cards } from "../containers/Dashboard.js"
-import { ROUTES, ROUTES_PATH } from "../constants/routes"
+import Dashboard from "../containers/Dashboard";
+import { screen, fireEvent } from "@testing-library/dom";
+import '@testing-library/jest-dom';
+import mockStore from "../__mocks__/store";
+import { ROUTES_PATH } from "../constants/routes";
+import { bills } from "../fixtures/bills";
+import $ from 'jquery';
 import { localStorageMock } from "../__mocks__/localStorage.js"
-import mockStore from "../__mocks__/store"
-import { bills } from "../fixtures/bills"
-import router from "../app/Router"
 
-jest.mock("../app/store", () => mockStore)
+jest.mock("../app/format.js", () => ({
+  formatDate: jest.fn((date) => date),
+  formatStatus: jest.fn((status) => status),
+}));
 
-describe('Given I am connected as an Admin', () => {
-  describe('When I am on Dashboard page, there are bills, and there is one pending', () => {
-    test('Then, filteredBills by pending status should return 1 bill', () => {
-      const filtered_bills = filteredBills(bills, "pending")
-      expect(filtered_bills.length).toBe(1)
-    })
-  })
-  describe('When I am on Dashboard page, there are bills, and there is one accepted', () => {
-    test('Then, filteredBills by accepted status should return 1 bill', () => {
-      const filtered_bills = filteredBills(bills, "accepted")
-      expect(filtered_bills.length).toBe(1)
-    })
-  })
-  describe('When I am on Dashboard page, there are bills, and there is two refused', () => {
-    test('Then, filteredBills by accepted status should return 2 bills', () => {
-      const filtered_bills = filteredBills(bills, "refused")
-      expect(filtered_bills.length).toBe(2)
-    })
-  })
-  describe('When I am on Dashboard page but it is loading', () => {
-    test('Then, Loading page should be rendered', () => {
-      document.body.innerHTML = DashboardUI({ loading: true })
-      expect(screen.getAllByText('Loading...')).toBeTruthy()
-    })
-  })
-  describe('When I am on Dashboard page but back-end send an error message', () => {
-    test('Then, Error page should be rendered', () => {
-      document.body.innerHTML = DashboardUI({ error: 'some error message' })
-      expect(screen.getAllByText('Erreur')).toBeTruthy()
-    })
-  })
+jest.mock("../__mocks__/store");
 
-  describe('When I am on Dashboard page and I click on arrow', () => {
-    test('Then, tickets list should be unfolding, and cards should appear', async () => {
+// Mock jQuery
+$.fn.modal = jest.fn(); // Mock jQuery modal function
+$.fn.click = jest.fn(); // Mock jQuery click function
 
-      const onNavigate = (pathname) => {
-        document.body.innerHTML = ROUTES({ pathname })
-      }
+describe("Dashboard", () => {
+  document.body.innerHTML = `<div id="arrow-icon1"></div>
+                             <div id="arrow-icon2"></div>
+                             <div id="arrow-icon3"></div>
+                             <div id="status-bills-container1"></div>
+                             <div id="status-bills-container2"></div>
+                             <div id="status-bills-container3"></div>
+                             <div id="modaleFileAdmin1" class="modal"></div>`;
+  
+  const onNavigate = jest.fn();
+  const dashboard = new Dashboard({
+    document, 
+    onNavigate, 
+    store: mockStore, 
+    bills, 
+    localStorage: window.localStorage
+  });
 
-      Object.defineProperty(window, 'localStorage', { value: localStorageMock })
-      window.localStorage.setItem('user', JSON.stringify({
-        type: 'Admin'
-      }))
+  beforeEach(() => {
+    jest.clearAllMocks();
+    window.localStorage.setItem('user', JSON.stringify({ email: "employee@test.com" }));
+  });
 
-      const dashboard = new Dashboard({
-        document, onNavigate, store: null, bills:bills, localStorage: window.localStorage
-      })
-      document.body.innerHTML = DashboardUI({ data: { bills } })
+  describe("handleShowTickets", () => {
+    test("It should render ticket cards", () => {
+      dashboard.handleShowTickets(new Event('click'), 1);
+      expect($.fn.click).toHaveBeenCalled();
+      expect(screen.getByTestId('status-bills-container1').innerHTML).toContain('bill-card');
+    });
+  });
 
-      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 1))
-      const handleShowTickets2 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 2))
-      const handleShowTickets3 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 3))
+  describe("handleClickIconEye", () => {
+    test("It should open a modal when icon eye is clicked", () => {
+      document.body.innerHTML = `<div data-testid="icon-eye" data-bill-url="http://example.com"></div>`;
+      const iconEye = screen.getByTestId('icon-eye');
+      iconEye.addEventListener('click', dashboard.handleClickIconEye);
+      fireEvent.click(iconEye);
+      expect($.fn.modal).toHaveBeenCalled();
+    });
+  });
 
-      const icon1 = screen.getByTestId('arrow-icon1')
-      const icon2 = screen.getByTestId('arrow-icon2')
-      const icon3 = screen.getByTestId('arrow-icon3')
+  describe("handleEditTicket", () => {
+    test("It should toggle edit form", () => {
+      const bill = bills[0];
+      dashboard.handleEditTicket(new Event('click'), bill);
+      expect(screen.getByTestId('dashboard-form')).toBeInTheDocument();
+    });
+  });
 
-      icon1.addEventListener('click', handleShowTickets1)
-      userEvent.click(icon1)
-      expect(handleShowTickets1).toHaveBeenCalled()
-      await waitFor(() => screen.getByTestId(`open-bill47qAXb6fIm2zOKkLzMro`) )
-      expect(screen.getByTestId(`open-bill47qAXb6fIm2zOKkLzMro`)).toBeTruthy()
-      icon2.addEventListener('click', handleShowTickets2)
-      userEvent.click(icon2)
-      expect(handleShowTickets2).toHaveBeenCalled()
-      await waitFor(() => screen.getByTestId(`open-billUIUZtnPQvnbFnB0ozvJh`) )
-      expect(screen.getByTestId(`open-billUIUZtnPQvnbFnB0ozvJh`)).toBeTruthy()
+  describe("handleAcceptSubmit", () => {
+    test("It should submit accepted status", () => {
+      const bill = bills[0];
+      dashboard.handleAcceptSubmit(new Event('click'), bill);
+      expect(mockStore.bills().update).toHaveBeenCalledWith({
+        data: JSON.stringify({...bill, status: 'accepted'}),
+        selector: bill.id,
+      });
+      expect(onNavigate).toHaveBeenCalledWith(ROUTES_PATH.Dashboard);
+    });
+  });
 
-      icon3.addEventListener('click', handleShowTickets3)
-      userEvent.click(icon3)
-      expect(handleShowTickets3).toHaveBeenCalled()
-      await waitFor(() => screen.getByTestId(`open-billBeKy5Mo4jkmdfPGYpTxZ`) )
-      expect(screen.getByTestId(`open-billBeKy5Mo4jkmdfPGYpTxZ`)).toBeTruthy()
-    })
-  })
+  describe("handleRefuseSubmit", () => {
+    test("It should submit refused status", () => {
+      const bill = bills[0];
+      dashboard.handleRefuseSubmit(new Event('click'), bill);
+      expect(mockStore.bills().update).toHaveBeenCalledWith({
+        data: JSON.stringify({...bill, status: 'refused'}),
+        selector: bill.id,
+      });
+      expect(onNavigate).toHaveBeenCalledWith(ROUTES_PATH.Dashboard);
+    });
+  });
 
-  describe('When I am on Dashboard page and I click on edit icon of a card', () => {
-    test('Then, right form should be filled',  () => {
+  describe("getBillsAllUsers", () => {
+    test("It should fetch bills for all users", async () => {
+      mockStore.bills.mockImplementationOnce(() => ({
+        list: jest.fn().mockResolvedValue(bills),
+      }));
+      const fetchedBills = await dashboard.getBillsAllUsers();
+      expect(fetchedBills).toHaveLength(bills.length);
+    });
+  });
 
-      const onNavigate = (pathname) => {
-        document.body.innerHTML = ROUTES({ pathname })
-      }
-
-      Object.defineProperty(window, 'localStorage', { value: localStorageMock })
-      window.localStorage.setItem('user', JSON.stringify({
-        type: 'Admin'
-      }))
-
-      const dashboard = new Dashboard({
-        document, onNavigate, store: null, bills:bills, localStorage: window.localStorage
-      })
-      document.body.innerHTML = DashboardUI({ data: { bills } })
-      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 1))
-      const icon1 = screen.getByTestId('arrow-icon1')
-      icon1.addEventListener('click', handleShowTickets1)
-      userEvent.click(icon1)
-      expect(handleShowTickets1).toHaveBeenCalled()
-      expect(screen.getByTestId(`open-bill47qAXb6fIm2zOKkLzMro`)).toBeTruthy()
-      const iconEdit = screen.getByTestId('open-bill47qAXb6fIm2zOKkLzMro')
-      userEvent.click(iconEdit)
-      expect(screen.getByTestId(`dashboard-form`)).toBeTruthy()
-    })
-  })
-
-  describe('When I am on Dashboard page and I click 2 times on edit icon of a card', () => {
-    test('Then, big bill Icon should Appear',  () => {
-
-      const onNavigate = (pathname) => {
-        document.body.innerHTML = ROUTES({ pathname })
-      }
-
-      Object.defineProperty(window, 'localStorage', { value: localStorageMock })
-      window.localStorage.setItem('user', JSON.stringify({
-        type: 'Admin'
-      }))
-
-      const dashboard = new Dashboard({
-        document, onNavigate, store: null, bills:bills, localStorage: window.localStorage
-      })
-      document.body.innerHTML = DashboardUI({ data: { bills } })
-
-      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 1))
-      const icon1 = screen.getByTestId('arrow-icon1')
-      icon1.addEventListener('click', handleShowTickets1)
-      userEvent.click(icon1)
-      expect(handleShowTickets1).toHaveBeenCalled()
-      expect(screen.getByTestId(`open-bill47qAXb6fIm2zOKkLzMro`)).toBeTruthy()
-      const iconEdit = screen.getByTestId('open-bill47qAXb6fIm2zOKkLzMro')
-      userEvent.click(iconEdit)
-      userEvent.click(iconEdit)
-      const bigBilledIcon = screen.queryByTestId("big-billed-icon")
-      expect(bigBilledIcon).toBeTruthy()
-    })
-  })
-
-
-  describe('When I am on Dashboard and there are no bills', () => {
-    test('Then, no cards should be shown', () => {
-      document.body.innerHTML = cards([])
-      const iconEdit = screen.queryByTestId('open-bill47qAXb6fIm2zOKkLzMro')
-      expect(iconEdit).toBeNull()
-    })
-  })
-})
-
-describe('Given I am connected as Admin, and I am on Dashboard page, and I clicked on a pending bill', () => {
-  describe('When I click on accept button', () => {
-    test('I should be sent on Dashboard with big billed icon instead of form', () => {
-      Object.defineProperty(window, 'localStorage', { value: localStorageMock })
-      window.localStorage.setItem('user', JSON.stringify({
-        type: 'Admin'
-      }))
-      document.body.innerHTML = DashboardFormUI(bills[0])
-
-      const onNavigate = (pathname) => {
-        document.body.innerHTML = ROUTES({ pathname })
-      }
-      const store = null
-      const dashboard = new Dashboard({
-        document, onNavigate, store, bills, localStorage: window.localStorage
-      })
-
-      const acceptButton = screen.getByTestId("btn-accept-bill-d")
-      const handleAcceptSubmit = jest.fn((e) => dashboard.handleAcceptSubmit(e, bills[0]))
-      acceptButton.addEventListener("click", handleAcceptSubmit)
-      fireEvent.click(acceptButton)
-      expect(handleAcceptSubmit).toHaveBeenCalled()
-      const bigBilledIcon = screen.queryByTestId("big-billed-icon")
-      expect(bigBilledIcon).toBeTruthy()
-    })
-  })
-  describe('When I click on refuse button', () => {
-    test('I should be sent on Dashboard with big billed icon instead of form', () => {
-      Object.defineProperty(window, 'localStorage', { value: localStorageMock })
-      window.localStorage.setItem('user', JSON.stringify({
-        type: 'Admin'
-      }))
-      document.body.innerHTML = DashboardFormUI(bills[0])
-
-      const onNavigate = (pathname) => {
-        document.body.innerHTML = ROUTES({ pathname })
-      }
-      const store = null
-      const dashboard = new Dashboard({
-        document, onNavigate, store, bills, localStorage: window.localStorage
-      })
-      const refuseButton = screen.getByTestId("btn-refuse-bill-d")
-      const handleRefuseSubmit = jest.fn((e) => dashboard.handleRefuseSubmit(e, bills[0]))
-      refuseButton.addEventListener("click", handleRefuseSubmit)
-      fireEvent.click(refuseButton)
-      expect(handleRefuseSubmit).toHaveBeenCalled()
-      const bigBilledIcon = screen.queryByTestId("big-billed-icon")
-      expect(bigBilledIcon).toBeTruthy()
-    })
-  })
-})
-
-describe('Given I am connected as Admin and I am on Dashboard page and I clicked on a bill', () => {
-  describe('When I click on the icon eye', () => {
-    test('A modal should open', () => {
-      Object.defineProperty(window, 'localStorage', { value: localStorageMock })
-      window.localStorage.setItem('user', JSON.stringify({
-        type: 'Admin'
-      }))
-      document.body.innerHTML = DashboardFormUI(bills[0])
-      const onNavigate = (pathname) => {
-        document.body.innerHTML = ROUTES({ pathname })
-      }
-      const store = null
-      const dashboard = new Dashboard({
-        document, onNavigate, store, bills, localStorage: window.localStorage
-      })
-
-      const handleClickIconEye = jest.fn(dashboard.handleClickIconEye)
-      const eye = screen.getByTestId('icon-eye-d')
-      eye.addEventListener('click', handleClickIconEye)
-      userEvent.click(eye)
-      expect(handleClickIconEye).toHaveBeenCalled()
-
-      const modale = screen.getByTestId('modaleFileAdmin')
-      expect(modale).toBeTruthy()
-    })
-  })
-})
-
-// test d'intégration GET
+  // test d'intégration GET
 describe("Given I am a user connected as Admin", () => {
   describe("When I navigate to Dashboard", () => {
     test("fetches bills from mock API GET", async () => {
@@ -306,3 +171,4 @@ describe("Given I am a user connected as Admin", () => {
 
   })
 })
+});

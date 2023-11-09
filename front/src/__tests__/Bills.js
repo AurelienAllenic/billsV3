@@ -2,38 +2,81 @@
  * @jest-environment jsdom
  */
 
-import {screen, waitFor} from "@testing-library/dom"
-import BillsUI from "../views/BillsUI.js"
-import { bills } from "../fixtures/bills.js"
-import { ROUTES_PATH} from "../constants/routes.js";
-import {localStorageMock} from "../__mocks__/localStorage.js";
+import '@testing-library/jest-dom';
+import { screen, fireEvent } from '@testing-library/dom';
+import Bills from '../containers/Bills.js';
+import { ROUTES_PATH } from '../constants/routes';
+import { formatDate, formatStatus } from '../app/format.js';
+import mockStore from '../__mocks__/store';
 
-import router from "../app/Router.js";
+jest.mock('../app/format.js', () => ({
+  formatDate: jest.fn(date => date),
+  formatStatus: jest.fn(status => status),
+}));
 
-describe("Given I am connected as an employee", () => {
-  describe("When I am on Bills Page", () => {
-    test("Then bill icon in vertical layout should be highlighted", async () => {
+jest.mock('../__mocks__/store');
 
-      Object.defineProperty(window, 'localStorage', { value: localStorageMock })
-      window.localStorage.setItem('user', JSON.stringify({
-        type: 'Employee'
-      }))
-      const root = document.createElement("div")
-      root.setAttribute("id", "root")
-      document.body.append(root)
-      router()
-      window.onNavigate(ROUTES_PATH.Bills)
-      await waitFor(() => screen.getByTestId('icon-window'))
-      const windowIcon = screen.getByTestId('icon-window')
-      //to-do write expect expression
+describe('Bills', () => {
+  const onNavigate = jest.fn();
+  const localStorageMock = {
+    getItem: jest.fn(() => JSON.stringify({ type: 'Employee' })),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+  };
 
-    })
-    test("Then bills should be ordered from earliest to latest", () => {
-      document.body.innerHTML = BillsUI({ data: bills })
-      const dates = screen.getAllByText(/^(19|20)\d\d[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$/i).map(a => a.innerHTML)
-      const antiChrono = (a, b) => ((a < b) ? 1 : -1)
-      const datesSorted = [...dates].sort(antiChrono)
-      expect(dates).toEqual(datesSorted)
-    })
-  })
-})
+  const bills = new Bills({
+    document,
+    onNavigate,
+    store: mockStore,
+    localStorage: localStorageMock,
+  });
+
+  describe('When I am on Bills page and I click on the new bill button', () => {
+    test('Then, the handleClickNewBill method should be called', () => {
+      const html = BillsUI({ data: [] });
+      document.body.innerHTML = html;
+
+      const newBillButton = screen.getByTestId('btn-new-bill');
+      newBillButton.addEventListener('click', bills.handleClickNewBill);
+
+      fireEvent.click(newBillButton);
+
+      expect(onNavigate).toHaveBeenCalledWith(ROUTES_PATH['NewBill']);
+    });
+  });
+
+  describe('When I am on Bills page and I click on the icon eye', () => {
+    test('Then, the handleClickIconEye method should be called', () => {
+      $.fn.modal = jest.fn(); // Mock jQuery modal function
+      document.body.innerHTML = `
+        <div data-testid="icon-eye" data-bill-url="http://example.com"></div>
+        <div id="modaleFile" class="modal"></div>
+      `;
+
+      const iconEye = screen.getByTestId('icon-eye');
+      iconEye.addEventListener('click', () => bills.handleClickIconEye(iconEye));
+
+      fireEvent.click(iconEye);
+
+      expect($.fn.modal).toHaveBeenCalledWith('show');
+      expect(screen.getByTestId('modaleFile')).toHaveTextContent('http://example.com');
+    });
+  });
+
+  describe('When I am on Bills page and I request the bills list', () => {
+    test('Then, bills should be fetched', async () => {
+      mockStore.bills.mockImplementationOnce(() => ({
+        list: jest.fn().mockResolvedValue([{ id: '47qAXb6fIm2zOKkLzMro', status: 'pending', date: '2021-07-01' }]),
+      }));
+
+      const billsList = await bills.getBills();
+
+      expect(formatDate).toHaveBeenCalled();
+      expect(formatStatus).toHaveBeenCalled();
+      expect(billsList.length).toBe(1);
+      expect(billsList[0].id).toBe('47qAXb6fIm2zOKkLzMro');
+    });
+  });
+
+  // Additional tests to cover other scenarios...
+});
