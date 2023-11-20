@@ -7,7 +7,9 @@ import Login from "../containers/Login.js";
 import { ROUTES } from "../constants/routes";
 import { fireEvent, screen } from "@testing-library/dom";
 
-describe("Given that I am a user on login page", () => {
+// Testing for employee
+describe("Given that I am an employee on login page", () => {
+  // Testing if empty fields
   describe("When I do not fill fields and I click on employee button Login In", () => {
     test("Then It should renders Login page", () => {
       document.body.innerHTML = LoginUI();
@@ -27,6 +29,7 @@ describe("Given that I am a user on login page", () => {
     });
   });
 
+  // Testing if wrong email (test if incorrect fields)
   describe("When I do fill fields in incorrect format and I click on employee button Login In", () => {
     test("Then It should renders Login page", () => {
       document.body.innerHTML = LoginUI();
@@ -47,7 +50,8 @@ describe("Given that I am a user on login page", () => {
       expect(screen.getByTestId("form-employee")).toBeTruthy();
     });
 
-    describe("When I do fill fields in correct format and I click on employee button Login In but login fails", () => {
+    // Testing if login fails
+    describe("When I do fill fields in correct format and I click on employee button Login but login fails", () => {
       test("Then createUser should be called", async () => {
         document.body.innerHTML = LoginUI();
         const inputData = {
@@ -85,7 +89,7 @@ describe("Given that I am a user on login page", () => {
         form.addEventListener("submit", handleSubmit);
         fireEvent.submit(form);
   
-        // Attendre que toutes les promesses en attente soient résolues
+        // wait for all Promises to resolve
         await new Promise(process.nextTick);
   
         expect(handleSubmit).toHaveBeenCalled();
@@ -95,6 +99,7 @@ describe("Given that I am a user on login page", () => {
     });
   });
 
+  // Testing if login succeeds
   describe("When I do fill fields in correct format and I click on employee button Login In", () => {
     test("Then I should be identified as an Employee in app", () => {
       document.body.innerHTML = LoginUI();
@@ -164,7 +169,9 @@ describe("Given that I am a user on login page", () => {
   });
 });
 
+// Testing for admin
 describe("Given that I am a user on login page", () => {
+  // Testing if empty fields
   describe("When I do not fill fields and I click on admin button Login In", () => {
     test("Then It should renders Login page", () => {
       document.body.innerHTML = LoginUI();
@@ -184,6 +191,7 @@ describe("Given that I am a user on login page", () => {
     });
   });
 
+  // Testing if wrong email (test if incorrect fields)
   describe("When I do fill fields in incorrect format and I click on admin button Login In", () => {
     test("Then it should renders Login page", () => {
       document.body.innerHTML = LoginUI();
@@ -204,7 +212,8 @@ describe("Given that I am a user on login page", () => {
       expect(screen.getByTestId("form-admin")).toBeTruthy();
     });
   });
-
+  
+  // Testing if login succeeds
   describe("When I do fill fields in correct format and I click on admin button Login In", () => {
     test("Then I should be identified as an HR admin in app", () => {
       document.body.innerHTML = LoginUI();
@@ -275,6 +284,7 @@ describe("Given that I am a user on login page", () => {
     });
   });
 });
+// Testing if login fails (admin)
 describe("Given that I am an admin user on the login page", () => {
   describe("When I fill in the fields correctly and click on the admin login button but the login fails", () => {
     test("Then createUser should be called", async () => {

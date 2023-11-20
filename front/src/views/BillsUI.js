@@ -26,7 +26,7 @@ const rows = (data) => {
 export default ({ data: bills, loading, error }) => {
   // added data-testid for modaleFile and modaleTitle
   const modal = () => (`
-    <div class="modal fade" data-testid='modaleFile' 'id="modaleFile" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal fade" data-testid='modaleFile' id="modaleFile" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">

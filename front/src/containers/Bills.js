@@ -27,7 +27,7 @@ export default class {
     $('#modaleFile').modal('show')
   }
 
-  getBills = () => {
+    getBills = () => {
     if (this.store) {
       return this.store
         .bills()
@@ -45,10 +45,7 @@ export default class {
                 };
 
               }else{
-                 console.log('Formatting date for:', doc.date);
               const formattedDate = formatDate(doc.date);
-              console.log("ourformattedDate", formatDate(doc.date))
-              console.log('Formatted date:', formattedDate);
               return {
                 ...doc,
                 date: formattedDate,
@@ -57,7 +54,7 @@ export default class {
               }
              
             } catch (e) {
-              console.log(e, 'for', doc);
+              //console.log(e, 'for', doc);
               return {
                 ...doc,
                 date: doc.date, // Provide a fallback value here
@@ -65,7 +62,7 @@ export default class {
               };
             }
           });
-          console.log('length', bills.length);
+          //console.log('length', bills.length);
           return bills;
         });
     }

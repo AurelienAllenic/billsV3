@@ -22,7 +22,7 @@ export default ({ data, loading, error }) => {
             <h3> En attente (${filteredBills(data && data.bills, "pending").length}) </h3>
             <span class='arrow-icon' id='arrow-icon1' data-testid='arrow-icon1'>${ArrowIcon}</span>
           </div>
-          <div class='status-bills-container' id='status-bills-container1'>
+          <div class='status-bills-container' id='status-bills-container1' data-testid='status-bills-container1'>
           </div>
           
             <div class='status-bills-header' style='margin-top: 20px;'>

@@ -5,7 +5,6 @@ import { ROUTES_PATH } from '../constants/routes.js';
 import USERS_TEST from '../constants/usersTest.js';
 import Logout from './Logout.js';
 
-// needs to be check again
 export const filteredBills = (data, status) => {
   return (data && data.length)
     ? data.filter(bill => {
@@ -138,8 +137,10 @@ export default class {
   };
 
   handleShowTickets(e, index) {
+    
     if (this.counter === undefined || this.index !== index) this.counter = 0;
     if (this.index === undefined || this.index !== index) this.index = index;
+    console.log(this.index, "INDEX")
     if (this.counter % 2 === 0) {
       $(`#arrow-icon${this.index}`).css({ transform: 'rotate(0deg)' });
       $(`#status-bills-container${this.index}`).html(cards(filteredBills(this.bills, getStatus(this.index))));
